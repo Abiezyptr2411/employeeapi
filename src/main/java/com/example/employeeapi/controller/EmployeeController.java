@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.employeeapi.model.Employee;
+import com.example.employeeapi.payload.ApiResponse;
 import com.example.employeeapi.service.EmployeeService;
+
 
 @RestController
 @RequestMapping("/api/employees")
@@ -37,9 +39,12 @@ public class EmployeeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Employee>> getAll() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<ApiResponse<List<Employee>>> getAll() {
+        List<Employee> employees = service.findAll();
+        ApiResponse<List<Employee>> response = new ApiResponse<>("success", HttpStatus.OK.value(), employees);
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping
     public ResponseEntity<?> create(
@@ -56,7 +61,9 @@ public class EmployeeController {
 
             if (image != null && !image.isEmpty()) {
                 if (!isImageFile(image)) {
-                    return ResponseEntity.badRequest().body("Only image files (jpg, jpeg, png) are allowed.");
+                    return ResponseEntity.badRequest().body(
+                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Only image files (jpg, jpeg, png) are allowed.")
+                    );
                 }
 
                 String fileName = System.currentTimeMillis() + "_" + StringUtils.cleanPath(image.getOriginalFilename());
@@ -67,9 +74,13 @@ public class EmployeeController {
                 emp.setImageUrl("/files/" + fileName);
             }
 
-            return ResponseEntity.ok(service.save(emp));
+            Employee saved = service.save(emp);
+            return ResponseEntity.ok(new ApiResponse<>("success", HttpStatus.OK.value(), saved));
+
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                new ApiResponse<>("error", HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error saving file: " + e.getMessage())
+            );
         }
     }
 
@@ -83,7 +94,11 @@ public class EmployeeController {
     ) {
         try {
             Optional<Employee> optEmp = service.findById(id);
-            if (optEmp.isEmpty()) return ResponseEntity.notFound().build();
+            if (optEmp.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new ApiResponse<>("error", HttpStatus.NOT_FOUND.value(), "Employee not found")
+                );
+            }
 
             Employee emp = optEmp.get();
             emp.setName(name);
@@ -92,7 +107,9 @@ public class EmployeeController {
 
             if (image != null && !image.isEmpty()) {
                 if (!isImageFile(image)) {
-                    return ResponseEntity.badRequest().body("Only image files (jpg, jpeg, png) are allowed.");
+                    return ResponseEntity.badRequest().body(
+                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Only image files (jpg, jpeg, png) are allowed.")
+                    );
                 }
 
                 if (emp.getImageUrl() != null) {
@@ -108,15 +125,24 @@ public class EmployeeController {
                 emp.setImageUrl("/files/" + fileName);
             }
 
-            return ResponseEntity.ok(service.save(emp));
+            Employee updated = service.save(emp);
+            return ResponseEntity.ok(new ApiResponse<>("success", HttpStatus.OK.value(), updated));
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating employee: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                new ApiResponse<>("error", HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error updating employee: " + e.getMessage())
+            );
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> delete(@PathVariable Long id) {
         Optional<Employee> empOpt = service.findById(id);
+        if (empOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ApiResponse<>("error", HttpStatus.NOT_FOUND.value(), "Employee not found")
+            );
+        }
+
         empOpt.ifPresent(emp -> {
             if (emp.getImageUrl() != null) {
                 File oldFile = new File(uploadDir + new File(emp.getImageUrl()).getName());
@@ -125,6 +151,6 @@ public class EmployeeController {
         });
 
         service.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>("success", HttpStatus.NO_CONTENT.value(), "Deleted successfully"));
     }
 }
