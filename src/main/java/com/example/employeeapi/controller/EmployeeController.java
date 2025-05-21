@@ -43,7 +43,7 @@ public class EmployeeController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<Employee>>> getAll() {
         List<Employee> employees = service.findAll();
-        ApiResponse<List<Employee>> response = new ApiResponse<>("success", HttpStatus.OK.value(), employees);
+        ApiResponse<List<Employee>> response = new ApiResponse<>("success", "00", employees);
         return ResponseEntity.ok(response);
     }
 
@@ -74,7 +74,7 @@ public class EmployeeController {
                     emp.setBirthDate(LocalDate.parse(birthDate));
                 } catch (DateTimeParseException e) {
                     return ResponseEntity.badRequest().body(
-                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Invalid birthDate format, expected yyyy-MM-dd")
+                        new ApiResponse<>("error", "01", "Invalid birthDate format, expected yyyy-MM-dd")
                     );
                 }
             }
@@ -82,7 +82,7 @@ public class EmployeeController {
             if (image != null && !image.isEmpty()) {
                 if (!isImageFile(image)) {
                     return ResponseEntity.badRequest().body(
-                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Only image files (jpg, jpeg, png) are allowed.")
+                        new ApiResponse<>("error", "01", "Only image files (jpg, jpeg, png) are allowed.")
                     );
                 }
 
@@ -94,12 +94,18 @@ public class EmployeeController {
                 emp.setImageUrl("/files/" + fileName);
             }
 
+            if (phone != null && service.existsByPhone(phone)) {
+                return ResponseEntity.badRequest().body(
+                    new ApiResponse<>("error", "01", "Phone number already exists")
+                );
+            }
+
             Employee saved = service.save(emp);
-            return ResponseEntity.ok(new ApiResponse<>("success", HttpStatus.OK.value(), saved));
+            return ResponseEntity.ok(new ApiResponse<>("success", "00", saved));
 
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ApiResponse<>("error", HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error saving file: " + e.getMessage())
+                new ApiResponse<>("error", "01", "Error saving file: " + e.getMessage())
             );
         }
     }
@@ -121,7 +127,7 @@ public class EmployeeController {
             Optional<Employee> optEmp = service.findById(id);
             if (optEmp.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>("error", HttpStatus.NOT_FOUND.value(), "Employee not found")
+                    new ApiResponse<>("error", "01", "Employee not found")
                 );
             }
 
@@ -139,17 +145,17 @@ public class EmployeeController {
                     emp.setBirthDate(LocalDate.parse(birthDate));
                 } catch (DateTimeParseException e) {
                     return ResponseEntity.badRequest().body(
-                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Invalid birthDate format, expected yyyy-MM-dd")
+                       new ApiResponse<>("error", "01", "Invalid birthDate format, expected yyyy-MM-dd")
                     );
                 }
             } else {
-                emp.setBirthDate(null); // or keep existing? sesuaikan kebutuhan
+                emp.setBirthDate(null); 
             }
 
             if (image != null && !image.isEmpty()) {
                 if (!isImageFile(image)) {
                     return ResponseEntity.badRequest().body(
-                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Only image files (jpg, jpeg, png) are allowed.")
+                        new ApiResponse<>("error", "01", "Only image files (jpg, jpeg, png) are allowed.")
                     );
                 }
 
@@ -166,11 +172,20 @@ public class EmployeeController {
                 emp.setImageUrl("/files/" + fileName);
             }
 
+            if (phone != null) {
+                Optional<Employee> existing = service.findByPhone(phone);
+                if (existing.isPresent() && !existing.get().getId().equals(id)) {
+                    return ResponseEntity.badRequest().body(
+                        new ApiResponse<>("error", "01", "Phone number already exists")
+                    );
+                }
+            }
+
             Employee updated = service.save(emp);
-            return ResponseEntity.ok(new ApiResponse<>("success", HttpStatus.OK.value(), updated));
+            return ResponseEntity.ok(new ApiResponse<>("success", "00", updated));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ApiResponse<>("error", HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error updating employee: " + e.getMessage())
+                new ApiResponse<>("error", "01", "Error updating employee: " + e.getMessage())
             );
         }
     }
@@ -180,7 +195,7 @@ public class EmployeeController {
         Optional<Employee> empOpt = service.findById(id);
         if (empOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                new ApiResponse<>("error", HttpStatus.NOT_FOUND.value(), "Employee not found")
+                new ApiResponse<>("error", "01", "Employee not found")
             );
         }
 
@@ -192,6 +207,6 @@ public class EmployeeController {
         });
 
         service.deleteById(id);
-        return ResponseEntity.ok(new ApiResponse<>("success", HttpStatus.NO_CONTENT.value(), "Deleted successfully"));
+        return ResponseEntity.ok(new ApiResponse<>("success", "00", "Deleted successfully"));
     }
 }

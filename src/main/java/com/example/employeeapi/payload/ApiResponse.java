@@ -2,12 +2,12 @@ package com.example.employeeapi.payload;
 
 public class ApiResponse<T> {
     private String status;
-    private int code;
+    private String code; 
     private T data;
 
     public ApiResponse() {}
 
-    public ApiResponse(String status, int code, T data) {
+    public ApiResponse(String status, String code, T data) {
         this.status = status;
         this.code = code;
         this.data = data;
@@ -22,11 +22,11 @@ public class ApiResponse<T> {
         this.status = status;
     }
 
-    public int getCode() {
+    public String getCode() {
         return code;
     }
 
-    public void setCode(int code) {
+    public void setCode(String code) {
         this.code = code;
     }
 

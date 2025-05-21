@@ -30,4 +30,12 @@ public class EmployeeService {
     public List<Employee> findAll() {
         return repository.findAll();
     }
+    
+    public Optional<Employee> findByPhone(String phone) {
+        return repository.findByPhone(phone);
+    }
+
+    public boolean existsByPhone(String phone) {
+        return repository.findByPhone(phone).isPresent();
+    }
 }
