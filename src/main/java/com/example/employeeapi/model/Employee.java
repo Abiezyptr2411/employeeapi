@@ -1,6 +1,11 @@
 package com.example.employeeapi.model;
 
-import jakarta.persistence.*;
+import java.time.LocalDate;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.Data;
 
 @Entity
@@ -14,4 +19,13 @@ public class Employee {
     private String email;
     private String position;
     private String imageUrl;
+
+    private String phone;
+    private String address;
+
+    private LocalDate birthDate;
+
+    private String gender;
+
+    private String department;
 }

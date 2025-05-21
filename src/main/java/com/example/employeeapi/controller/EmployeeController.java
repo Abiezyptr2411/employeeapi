@@ -2,6 +2,8 @@ package com.example.employeeapi.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,19 +47,37 @@ public class EmployeeController {
         return ResponseEntity.ok(response);
     }
 
-
     @PostMapping
     public ResponseEntity<?> create(
             @RequestParam String name,
             @RequestParam String email,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) MultipartFile image
+            @RequestParam(required = false) MultipartFile image,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String birthDate, 
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String department
     ) {
         try {
             Employee emp = new Employee();
             emp.setName(name);
             emp.setEmail(email);
             emp.setPosition(position);
+            emp.setPhone(phone);
+            emp.setAddress(address);
+            emp.setGender(gender);
+            emp.setDepartment(department);
+
+            if (birthDate != null && !birthDate.isEmpty()) {
+                try {
+                    emp.setBirthDate(LocalDate.parse(birthDate));
+                } catch (DateTimeParseException e) {
+                    return ResponseEntity.badRequest().body(
+                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Invalid birthDate format, expected yyyy-MM-dd")
+                    );
+                }
+            }
 
             if (image != null && !image.isEmpty()) {
                 if (!isImageFile(image)) {
@@ -90,7 +110,12 @@ public class EmployeeController {
             @RequestParam String name,
             @RequestParam String email,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) MultipartFile image
+            @RequestParam(required = false) MultipartFile image,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String birthDate,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String department
     ) {
         try {
             Optional<Employee> optEmp = service.findById(id);
@@ -104,6 +129,22 @@ public class EmployeeController {
             emp.setName(name);
             emp.setEmail(email);
             emp.setPosition(position);
+            emp.setPhone(phone);
+            emp.setAddress(address);
+            emp.setGender(gender);
+            emp.setDepartment(department);
+
+            if (birthDate != null && !birthDate.isEmpty()) {
+                try {
+                    emp.setBirthDate(LocalDate.parse(birthDate));
+                } catch (DateTimeParseException e) {
+                    return ResponseEntity.badRequest().body(
+                        new ApiResponse<>("error", HttpStatus.BAD_REQUEST.value(), "Invalid birthDate format, expected yyyy-MM-dd")
+                    );
+                }
+            } else {
+                emp.setBirthDate(null); // or keep existing? sesuaikan kebutuhan
+            }
 
             if (image != null && !image.isEmpty()) {
                 if (!isImageFile(image)) {
